@@ -19,6 +19,7 @@ public class BudgetPlannerImporter {
 
     private static final Logger LOGGER = LogManager.getLogger(BudgetPlannerImporter.class);
     private PathMatcher csvMatcher = FileSystems.getDefault().getPathMatcher("glob:**/*.csv");
+    private AccountMapper accountMapper = new AccountMapper();
 
     public void importCsv(Path path) {
         if (!csvMatcher.matches(path)) {
@@ -31,8 +32,13 @@ public class BudgetPlannerImporter {
         }
         try (BufferedReader reader = Files.newBufferedReader(path)) { // try-with-resources
             String line = null;
+            reader.readLine();
             while ((line = reader.readLine()) != null) {
-                System.out.println(line);
+                try {
+                    LOGGER.debug(accountMapper.map(line));
+                } catch (InvalidPaymentException e) {
+                    LOGGER.error("Error while mapping line: {}", e.getMessage());
+                }
             }
         } catch (IOException e) {
             LOGGER.fatal("An error occurred while reading file: {}", path);
